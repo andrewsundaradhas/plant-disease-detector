@@ -186,7 +186,8 @@ export function ReportsContent() {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percent }: { name: string; percent: number }) => {
+                label={(props: any) => {
+                  const { name, percent } = props;
                   return `${name} ${(percent * 100).toFixed(0)}%`;
                 }}
                 outerRadius={80}
