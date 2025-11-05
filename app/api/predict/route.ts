@@ -3,6 +3,17 @@ import { writeFile } from 'fs/promises';
 import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
+// Define the Prediction interface
+interface Prediction {
+  className: string;
+  probability: number;
+  diseaseInfo?: {
+    name: string;
+    description: string;
+    solution: string[];
+  };
+}
+
 // This is a simple API route that just returns a success response
 // The actual model inference will happen on the client side
 
