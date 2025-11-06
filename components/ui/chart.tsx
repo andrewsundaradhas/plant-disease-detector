@@ -113,12 +113,11 @@ interface PayloadItem {
   [key: string]: any;
 }
 
-type ChartTooltipContentProps = Omit<React.ComponentProps<typeof RechartsPrimitive.Tooltip>, 'content' | 'payload' | 'formatter'> & {
-  hideLabel?: boolean;
-  hideIndicator?: boolean;
-  indicator?: 'line' | 'dot' | 'dashed';
-  nameKey?: string;
-  labelKey?: string;
+// Define a more permissive type for the formatter to match Recharts' expectations
+type Formatter<TValue = any, TName = string> = (value: TValue, name: TName, entry: any, index: number) => React.ReactNode;
+
+type ChartTooltipContentProps = {
+  active?: boolean;
   payload?: Array<{
     value: any;
     name: string | number;
@@ -127,9 +126,15 @@ type ChartTooltipContentProps = Omit<React.ComponentProps<typeof RechartsPrimiti
     dataKey: string | number;
     [key: string]: any;
   }>;
+  className?: string;
+  hideLabel?: boolean;
+  hideIndicator?: boolean;
+  indicator?: 'line' | 'dot' | 'dashed';
+  nameKey?: string;
+  labelKey?: string;
   label?: any;
   labelClassName?: string;
-  formatter?: (value: any, name: any, entry: any, index: number) => any;
+  formatter?: Formatter;
   color?: string;
 }
 
