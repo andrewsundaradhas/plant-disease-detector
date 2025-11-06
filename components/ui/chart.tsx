@@ -104,9 +104,18 @@ ${colorConfig
 
 const ChartTooltip = RechartsPrimitive.Tooltip
 
+interface PayloadItem {
+  name?: string;
+  value?: any;
+  payload?: any;
+  dataKey?: string | number;
+  color?: string;
+  [key: string]: any;
+}
+
 function ChartTooltipContent({
   active,
-  payload,
+  payload = [],
   className,
   indicator = 'dot',
   hideLabel = false,
@@ -118,13 +127,14 @@ function ChartTooltipContent({
   color,
   nameKey,
   labelKey,
-}: React.ComponentProps<typeof RechartsPrimitive.Tooltip> &
-  React.ComponentProps<'div'> & {
-    hideLabel?: boolean
-    hideIndicator?: boolean
-    indicator?: 'line' | 'dot' | 'dashed'
-    nameKey?: string
-    labelKey?: string
+}: Omit<React.ComponentProps<typeof RechartsPrimitive.Tooltip>, 'content'> &
+  React.HTMLAttributes<HTMLDivElement> & {
+    hideLabel?: boolean;
+    hideIndicator?: boolean;
+    indicator?: 'line' | 'dot' | 'dashed';
+    nameKey?: string;
+    labelKey?: string;
+    payload?: PayloadItem[];
   }) {
   const { config } = useChart()
 
