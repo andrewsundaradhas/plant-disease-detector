@@ -113,17 +113,25 @@ interface PayloadItem {
   [key: string]: any;
 }
 
-interface ChartTooltipContentProps extends Omit<React.ComponentProps<typeof RechartsPrimitive.Tooltip>, 'content' | 'payload'> {
+interface ChartTooltipContentProps {
+  active?: boolean;
+  payload?: Array<{
+    value: any;
+    name: string | number;
+    payload: any;
+    color: string;
+    dataKey: string | number;
+    [key: string]: any;
+  }>;
+  className?: string;
   hideLabel?: boolean;
   hideIndicator?: boolean;
   indicator?: 'line' | 'dot' | 'dashed';
   nameKey?: string;
   labelKey?: string;
-  payload?: PayloadItem[];
   label?: any;
-  labelFormatter?: (value: any, payload: PayloadItem[]) => React.ReactNode;
   labelClassName?: string;
-  formatter?: (value: any, name: string, props: any) => any;
+  formatter?: (value: any, name: string | number, entry: any, index: number) => any;
   color?: string;
 }
 
@@ -210,73 +218,62 @@ function ChartTooltipContent({
             >
               {formatter && item?.value !== undefined && item.name ? (
                 formatter(item.value, item.name, item, index, item.payload)
-              ) : (
-                <>
-                  {itemConfig?.icon ? (
-                    <itemConfig.icon />
-                  ) : (
-                    !hideIndicator && (
-                      <div
-                        className={cn(
-                          'shrink-0 rounded-[2px] border-(--color-border) bg-(--color-bg)',
-                          {
-                            'h-2.5 w-2.5': indicator === 'dot',
-                            'w-1': indicator === 'line',
-                            'w-0 border-[1.5px] border-dashed bg-transparent':
-                              indicator === 'dashed',
-                            'my-0.5': nestLabel && indicator === 'dashed',
-                          },
-                        )}
-                        style={
-                          {
-                            '--color-bg': indicatorColor,
-                            '--color-border': indicatorColor,
-                          } as React.CSSProperties
-                        }
-                      />
-                    )
+              ) : itemConfig?.icon ? (
+                <itemConfig.icon />
+              ) : !hideIndicator ? (
+                <div
+                  className={cn(
+                    'shrink-0 rounded-[2px] border border-border bg-background',
+                    {
+                      'h-2.5 w-2.5': indicator === 'dot',
+                      'w-1': indicator === 'line',
+                      'w-0 border-[1.5px] border-dashed bg-transparent':
+                        indicator === 'dashed',
+                    }
                   )}
-                  <div
-                    className={cn(
-                      'flex flex-1 justify-between leading-none',
-                      nestLabel ? 'items-end' : 'items-center',
-                    )}
-                  >
-                    <div className="grid gap-1.5">
-                      {nestLabel ? tooltipLabel : null}
-                      <span className="text-muted-foreground">
-                        {itemConfig?.label || item.name}
-                      </span>
-                    </div>
-                    {item.value && (
-                      <span className="text-foreground font-mono font-medium tabular-nums">
-                        {item.value.toLocaleString()}
-                      </span>
-                    )}
-                  </div>
-                </>
-              )}
+                />
+              ) : null}
             </div>
-          )
-        })}
+          </div>
+        ))}
       </div>
     </div>
   )
 }
 
-const ChartLegend = RechartsPrimitive.Legend
+ChartTooltipContent.displayName = 'ChartTooltipContent'
+
+const ChartLegend = RechartsPrimitive.Legend as React.ComponentType<{
+  content?: React.ReactNode;
+  payload?: Array<{
+    value: any;
+    id: string;
+    type?: string;
+    color?: string;
+    [key: string]: any;
+  }>;
+  [key: string]: any;
+}>;
 
 function ChartLegendContent({
   className,
   hideIcon = false,
-  payload,
+  payload = [],
   verticalAlign = 'bottom',
   nameKey,
-}: React.ComponentProps<'div'> &
-  Pick<RechartsPrimitive.LegendProps, 'payload' | 'verticalAlign'> & {
-    hideIcon?: boolean
-    nameKey?: string
-  }) {
+  ...props
+}: React.HTMLAttributes<HTMLDivElement> & {
+  hideIcon?: boolean;
+  payload?: Array<{
+    value: any;
+    id: string;
+    type?: string;
+    color?: string;
+    [key: string]: any;
+  }>;
+  verticalAlign?: 'top' | 'middle' | 'bottom';
+  nameKey?: string;
+}) {
   const { config } = useChart()
 
   if (!payload?.length) {
