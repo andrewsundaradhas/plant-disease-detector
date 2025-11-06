@@ -113,8 +113,12 @@ interface PayloadItem {
   [key: string]: any;
 }
 
-interface ChartTooltipContentProps {
-  active?: boolean;
+type ChartTooltipContentProps = Omit<React.ComponentProps<typeof RechartsPrimitive.Tooltip>, 'content' | 'payload' | 'formatter'> & {
+  hideLabel?: boolean;
+  hideIndicator?: boolean;
+  indicator?: 'line' | 'dot' | 'dashed';
+  nameKey?: string;
+  labelKey?: string;
   payload?: Array<{
     value: any;
     name: string | number;
@@ -123,15 +127,9 @@ interface ChartTooltipContentProps {
     dataKey: string | number;
     [key: string]: any;
   }>;
-  className?: string;
-  hideLabel?: boolean;
-  hideIndicator?: boolean;
-  indicator?: 'line' | 'dot' | 'dashed';
-  nameKey?: string;
-  labelKey?: string;
   label?: any;
   labelClassName?: string;
-  formatter?: (value: any, name: string | number, entry: any, index: number) => any;
+  formatter?: (value: any, name: any, entry: any, index: number) => any;
   color?: string;
 }
 
