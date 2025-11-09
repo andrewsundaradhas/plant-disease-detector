@@ -3,11 +3,12 @@ frontend:
   phases:
     preBuild:
       commands:
-        - npm ci
+        - nvm use 18
+        - npm install -g npm@latest
+        - chmod +x build.sh
     build:
       commands:
-        - chmod +x build.sh
-        - npm run amplify-build
+        - ./build.sh
   artifacts:
     baseDirectory: out
     files:
