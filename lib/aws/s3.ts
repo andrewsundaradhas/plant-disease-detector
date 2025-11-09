@@ -3,7 +3,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Readable } from 'stream';
 
 // Validate environment variables
-const requiredEnvVars = ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_REGION', 'S3_BUCKET_NAME'];
+const requiredEnvVars = ['NEXT_PUBLIC_AWS_ACCESS_KEY_ID', 'NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY', 'NEXT_PUBLIC_AWS_REGION', 'NEXT_PUBLIC_S3_BUCKET_NAME'];
 const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
 if (missingVars.length > 0) {
@@ -11,42 +11,29 @@ if (missingVars.length > 0) {
 }
 
 console.log('S3 Configuration:', {
-  region: process.env.AWS_REGION,
-  bucket: process.env.S3_BUCKET_NAME,
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID ? '***' + process.env.AWS_ACCESS_KEY_ID.slice(-4) : 'not set',
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY ? '***' + process.env.AWS_SECRET_ACCESS_KEY.slice(-4) : 'not set'
+  region: process.env.NEXT_PUBLIC_AWS_REGION,
+  bucket: process.env.NEXT_PUBLIC_S3_BUCKET_NAME,
+  accessKeyId: process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID ? '***' + process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID.slice(-4) : 'not set',
+  secretAccessKey: process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY ? '***' + process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY.slice(-4) : 'not set'
 });
 
 const s3Client = new S3Client({
-  region: process.env.AWS_REGION,
+  region: process.env.NEXT_PUBLIC_AWS_REGION,
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+    accessKeyId: process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY!,
   },
 });
 
 // Convert file to buffer (works in both browser and Node.js)
-async function fileToBuffer(file: Blob | File | Buffer): Promise<Buffer> {
+async function fileToBuffer(file: File | Blob | Buffer): Promise<Buffer> {
   // If it's already a Buffer, return it
-  if (file instanceof Buffer) return file;
+  if (Buffer.isBuffer(file)) return file;
   
-  // If it's an ArrayBuffer, convert to Buffer
-  if (file instanceof ArrayBuffer) return Buffer.from(file);
-  
-  // For browser File/Blob objects
-  if (typeof window !== 'undefined' && 'FileReader' in window) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (reader.result instanceof ArrayBuffer) {
-          resolve(Buffer.from(reader.result));
-        } else {
-          reject(new Error('Failed to read file as ArrayBuffer'));
-        }
-      };
-      reader.onerror = reject;
-      reader.readAsArrayBuffer(file);
-    });
+  // For Blob/File in browser
+  if (typeof window !== 'undefined' && (file instanceof Blob || file instanceof File)) {
+    const arrayBuffer = await file.arrayBuffer();
+    return Buffer.from(arrayBuffer);
   }
   
   // For Node.js environment with Readable stream
@@ -68,10 +55,10 @@ export async function uploadToS3(file: File): Promise<{ fileKey: string; fileNam
   }
 
   const fileKey = `uploads/${Date.now().toString()}-${file.name.replace(/\s+/g, '-')}`;
-  const fileUrl = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`;
+  const fileUrl = `https://${process.env.NEXT_PUBLIC_S3_BUCKET_NAME}.s3.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/${fileKey}`;
 
   console.log('Uploading to S3:', {
-    bucket: process.env.S3_BUCKET_NAME,
+    bucket: process.env.NEXT_PUBLIC_S3_BUCKET_NAME,
     key: fileKey,
     size: file.size,
     type: file.type,
@@ -82,7 +69,7 @@ export async function uploadToS3(file: File): Promise<{ fileKey: string; fileNam
     const fileBuffer = await fileToBuffer(file);
     
     const params = {
-      Bucket: process.env.S3_BUCKET_NAME,
+      Bucket: process.env.NEXT_PUBLIC_S3_BUCKET_NAME,
       Key: fileKey,
       Body: fileBuffer,
       ContentType: file.type,
@@ -117,7 +104,7 @@ export async function uploadToS3(file: File): Promise<{ fileKey: string; fileNam
       } else if (errorMessage.includes('The request signature we calculated does not match')) {
         throw new Error('Invalid AWS Secret Access Key');
       } else if (errorMessage.includes('Access Denied')) {
-        throw new Error(`Access denied to S3 bucket. Check IAM permissions for bucket: ${process.env.S3_BUCKET_NAME}`);
+        throw new Error(`Access denied to S3 bucket. Check IAM permissions for bucket: ${process.env.NEXT_PUBLIC_S3_BUCKET_NAME}`);
       }
       throw new Error(`S3 Error: ${error.message} (Code: ${error.$metadata.httpStatusCode})`);
     }
@@ -130,13 +117,13 @@ export function getS3Url(fileKey: string): string {
   if (!fileKey) {
     throw new Error('File key is required');
   }
-  return `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`;
+  return `https://${process.env.NEXT_PUBLIC_S3_BUCKET_NAME}.s3.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/${fileKey}`;
 }
 
 export async function getSignedS3Url(fileKey: string): Promise<string> {
   try {
     const command = new GetObjectCommand({
-      Bucket: process.env.S3_BUCKET_NAME,
+      Bucket: process.env.NEXT_PUBLIC_S3_BUCKET_NAME,
       Key: fileKey,
     });
     return await getSignedUrl(s3Client, command, { expiresIn: 3600 });
@@ -149,7 +136,7 @@ export async function getSignedS3Url(fileKey: string): Promise<string> {
 export async function deleteFromS3(fileKey: string): Promise<void> {
   try {
     const params = {
-      Bucket: process.env.S3_BUCKET_NAME,
+      Bucket: process.env.NEXT_PUBLIC_S3_BUCKET_NAME,
       Key: fileKey,
     };
     await s3Client.send(new DeleteObjectCommand(params));
