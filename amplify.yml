@@ -3,10 +3,14 @@ frontend:
   phases:
     preBuild:
       commands:
-        - nvm use 16
+        - curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+        - export NVM_DIR="$HOME/.nvm"
+        - [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+        - nvm install 18
+        - nvm use 18
         - node -v
+        - npm install -g npm@8.19.4
         - npm -v
-        - npm install -g npm@8
         - chmod +x build.sh
     build:
       commands:
