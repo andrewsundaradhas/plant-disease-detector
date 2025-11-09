@@ -9,6 +9,10 @@
     "start": "next start"
   },
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.927.0",
+    "@aws-sdk/client-s3": "^3.927.0",
+    "@aws-sdk/lib-dynamodb": "^3.927.0",
+    "@aws-sdk/s3-request-presigner": "^3.927.0",
     "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "1.2.2",

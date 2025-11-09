@@ -113,9 +113,7 @@ interface PayloadItem {
   [key: string]: any;
 }
 
-// Define a more permissive type for the formatter to match Recharts' expectations
-type Formatter<TValue = any, TName = string> = (value: TValue, name: TName, entry: any, index: number) => React.ReactNode;
-
+// Define a simplified version of the Tooltip props that we actually use
 type ChartTooltipContentProps = {
   active?: boolean;
   payload?: Array<{
@@ -134,11 +132,19 @@ type ChartTooltipContentProps = {
   labelKey?: string;
   label?: any;
   labelClassName?: string;
-  formatter?: Formatter;
+  // Make the formatter more permissive to match Recharts' expectations
+  formatter?: <TValue, TName>(
+    value: TValue,
+    name: TName,
+    entry: PayloadItem,
+    index: number,
+    payload?: any
+  ) => React.ReactNode;
+  labelFormatter?: (label: any, payload: any[]) => React.ReactNode;
   color?: string;
 }
 
-function ChartTooltipContent({
+const ChartTooltipContent = ({
   active,
   payload = [],
   className,
@@ -152,8 +158,13 @@ function ChartTooltipContent({
   color,
   nameKey,
   labelKey,
-}: ChartTooltipContentProps) {
+  ...props
+}: ChartTooltipContentProps) => {
   const { config } = useChart()
+
+  if (!active || !payload?.length) {
+    return null
+  }
 
   const tooltipLabel = React.useMemo(() => {
     if (hideLabel || !payload?.length) {
@@ -181,42 +192,36 @@ function ChartTooltipContent({
     }
 
     return <div className={cn('font-medium', labelClassName)}>{value}</div>
-  }, [
-    label,
-    labelFormatter,
-    payload,
-    hideLabel,
-    labelClassName,
-    config,
-    labelKey,
-  ])
+  }, [label, labelFormatter, payload, hideLabel, labelClassName, config, labelKey])
 
-  if (!active || !payload?.length) {
-    return null
-  }
-
-  const nestLabel = payload.length === 1 && indicator !== 'dot'
+  const itemConfig = payload[0]?.dataKey ? config[String(payload[0].dataKey)] : null
 
   return (
     <div
       className={cn(
-        'border-border/50 bg-background grid min-w-[8rem] items-start gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs shadow-xl',
-        className,
+        'z-50 overflow-hidden rounded-md border bg-popover px-3 py-1.5 text-sm text-popover-foreground shadow-md',
+        className
       )}
+      {...props}
     >
-      {!nestLabel ? tooltipLabel : null}
-      <div className="grid gap-1.5">
+      {!hideLabel && payload[0]?.payload?.name && (
+        <p className="mb-1 font-medium">
+          {payload[0].payload.name}
+        </p>
+      )}
+      <div className="flex flex-col gap-1.5">
         {payload.map((item, index) => {
-          const key = `${nameKey || item.name || item.dataKey || 'value'}`
-          const itemConfig = getPayloadConfigFromPayload(config, item, key)
-          const indicatorColor = color || item.payload.fill || item.color
+          const itemConfig = item.dataKey ? config[String(item.dataKey)] : null
+          const itemColor = item.color || itemConfig?.color
 
           return (
             <div
-              key={item.dataKey}
+              key={index}
               className={cn(
-                '[&>svg]:text-muted-foreground flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5',
-                indicator === 'dot' && 'items-center',
+                'flex items-center gap-2',
+                indicator === 'dot' && 'h-5',
+                indicator === 'line' && 'h-1',
+                indicator === 'dashed' && 'h-0.5'
               )}
             >
               {formatter && item?.value !== undefined && item.name ? (
@@ -234,11 +239,14 @@ function ChartTooltipContent({
                         indicator === 'dashed',
                     }
                   )}
+                  style={{
+                    backgroundColor: itemColor,
+                  }}
                 />
               ) : null}
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )
@@ -334,29 +342,24 @@ function getPayloadConfigFromPayload(
     'payload' in payload &&
     typeof payload.payload === 'object' &&
     payload.payload !== null
-      ? payload.payload
+      ? payload.payload as Record<string, unknown>
       : undefined
 
   let configLabelKey: string = key
 
-  if (
-    key in payload &&
-    typeof payload[key as keyof typeof payload] === 'string'
-  ) {
-    configLabelKey = payload[key as keyof typeof payload] as string
-  } else if (
-    payloadPayload &&
-    key in payloadPayload &&
-    typeof payloadPayload[key as keyof typeof payloadPayload] === 'string'
-  ) {
-    configLabelKey = payloadPayload[
-      key as keyof typeof payloadPayload
-    ] as string
+  if (key in payload) {
+    const value = (payload as Record<string, unknown>)[key]
+    if (typeof value === 'string') {
+      configLabelKey = value
+    }
+  } else if (payloadPayload && key in payloadPayload) {
+    const value = payloadPayload[key]
+    if (typeof value === 'string') {
+      configLabelKey = value
+    }
   }
 
-  return configLabelKey in config
-    ? config[configLabelKey]
-    : config[key as keyof typeof config]
+  return config[configLabelKey] || config[key]
 }
 
 export {
