@@ -3,15 +3,15 @@ const nextConfig = {
   // Enable React strict mode
   reactStrictMode: true,
   
-  // Enable server actions
+  // Experimental features
   experimental: {
     serverActions: true,
-    serverComponentsExternalPackages: ['@tensorflow/tfjs', 'canvas'],
+    serverComponentsExternalPackages: ['@tensorflow/tfjs'],
+    turbo: false,
   },
   
   // TypeScript configuration
   typescript: {
-    // Enable type checking during build
     ignoreBuildErrors: false,
   },
   
@@ -20,16 +20,15 @@ const nextConfig = {
     unoptimized: true,
     remotePatterns: [
       {
-        protocol: 'http',
-        hostname: 'localhost',
-        port: '3000',
+        protocol: 'https',
+        hostname: '**',
       },
     ],
   },
   
   // Environment variables
   env: {
-    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'https://main.d2umnugeqypgjx.amplifyapp.com',
   },
   
   // Webpack configuration
@@ -44,20 +43,21 @@ const nextConfig = {
         net: false,
         dns: false,
         child_process: false,
-        canvas: false,
       };
     }
     
     return config;
   },
   
-  // Output configuration
-  output: 'standalone',
+  // Output configuration for AWS Amplify
+  output: 'export',
+  distDir: '.next',
   
-  // Disable Turbopack
-  experimental: {
-    turbo: false,
-  },
+  // Disable static page generation for all pages by default
+  generateEtags: false,
+  
+  // Enable React 18 features
+  swcMinify: true,
 };
 
 // Disable Turbopack
