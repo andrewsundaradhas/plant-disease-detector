@@ -6,7 +6,8 @@ frontend:
         - npm ci
     build:
       commands:
-        - npm run build
+        - chmod +x build.sh
+        - npm run amplify-build
   artifacts:
     baseDirectory: out
     files:
